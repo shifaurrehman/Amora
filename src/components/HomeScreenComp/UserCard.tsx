@@ -70,9 +70,6 @@ const UserCard: React.FC<UserCardProps> = ({ item }) => {
     // Early return if `item` is not provided (though it shouldn't happen if props are valid)
     if (!item) return null;
 
-    const randomUserIndex = Math.floor(Math.random() * Users.length);
-    const defaultDistance = Users[randomUserIndex]?.distance; 
-
     const handleDetails = () => {
         navigation.navigate("Details", { item });
     }
@@ -80,7 +77,7 @@ const UserCard: React.FC<UserCardProps> = ({ item }) => {
         <View style={styles.mainCard}>
             <Pressable onPress={handleDetails}>
                 <Image
-                    source={item.profileImage?{uri: item?.profileImage?.uri}:{uri:item.uri}} 
+                    source={item.profileImage?{uri: item?.profileImage?.uri}:{uri:item?.uri}} 
                     style={styles.imageStyle}
                     resizeMode="cover"
                 />
@@ -89,13 +86,6 @@ const UserCard: React.FC<UserCardProps> = ({ item }) => {
                     style={styles.gradientOverlay}
                 >
                     <View style={styles.detailsContainer}>
-                        {/* Conditionally render distance if it exists */}
-                        {defaultDistance && (
-                        <View style={styles.distance}>
-                            <Text style={styles.distanceText}>{defaultDistance}</Text>
-                        </View>
-                    )}
-
                         <Text style={styles.userName}>
                             {item.name}, {item.age}
                         </Text>
@@ -158,19 +148,6 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         position: "absolute",
         bottom: 0,
-    },
-    distance: {
-        backgroundColor: "rgba(0, 0, 0, 0.7)", // ✅ FIXED HEX ISSUE
-        borderRadius: 50,
-        overflow: "hidden",
-        paddingHorizontal: 6,
-        paddingVertical: 3,
-        alignSelf: "flex-start",
-    },
-    distanceText: {
-        color: "#fff",
-        fontSize: 14,
-        fontWeight: "400",
     },
     gradientOverlay: {
         ...StyleSheet.absoluteFillObject,
