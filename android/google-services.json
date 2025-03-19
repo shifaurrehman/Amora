@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "76695509081",
+    "project_id": "eternalvows-3186b",
+    "storage_bucket": "eternalvows-3186b.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:76695509081:android:e2f31c01a4688ed1097948",
+        "android_client_info": {
+          "package_name": "com.authentication1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "76695509081-imaq2k9dahr9to51bp38qrs8317ierbb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.authentication1",
+            "certificate_hash": "3f78ba74b5869552f899df3f4c097c8fbe5553ac"
+          }
+        },
+        {
+          "client_id": "76695509081-a088rkb4mns7e693raavdp34qgq5bf8o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAKNivVi77obSMA6j_nQfjt4qu55evbNdU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "76695509081-a088rkb4mns7e693raavdp34qgq5bf8o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
