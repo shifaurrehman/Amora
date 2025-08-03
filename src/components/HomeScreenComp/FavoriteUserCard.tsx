@@ -30,7 +30,7 @@ const FavoriteUserCard: React.FC<FavoriteUserCardProps> = ({ user, onRemoveFavor
         <View style={styles.mainCard}>
             <Pressable onPress={moveToDetails}>
                 <Image
-                    source={{uri:user?.profileImage?.uri}}
+                    source={{ uri: user?.profileImage?.uri }}
                     style={styles.imageStyle}
                     resizeMode="cover"
                 />
@@ -39,9 +39,14 @@ const FavoriteUserCard: React.FC<FavoriteUserCardProps> = ({ user, onRemoveFavor
                     style={styles.gradientOverlay}
                 >
                     <View style={styles.detailsContainer}>
-                        <Text style={styles.userName}>
-                            {user.name}, {user.age}
-                        </Text>
+                        <View style={styles.nameContainer}>
+                            <Text style={styles.userName}>
+                                {user.name},
+                            </Text>
+                            <Text style={styles.userAge}>
+                                {user.age}
+                            </Text>
+                        </View>
 
                         {/* Optional fields */}
                         {user.occupation && (
@@ -108,7 +113,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 15,
         left: 15,
-        backgroundColor: "#363534",
+        backgroundColor: "#ff008c",
         paddingHorizontal: 6,
         paddingVertical: 4,
         borderRadius: 12,
@@ -191,5 +196,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
     },
-
+    nameContainer:{
+        flexDirection:"row",
+    },
+    userAge:{
+        fontSize: 22,
+        fontWeight: 'bold',
+        textAlign: 'left',
+        color: 'orange',
+        paddingVertical: 6,
+    }
 });

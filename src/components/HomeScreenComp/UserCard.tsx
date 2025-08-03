@@ -12,43 +12,6 @@ import { RootStackParamList } from '../../navigation/Types';
 import { UserProfileType } from '../../navigation/TypescriptTypes/UserType';
 
 
-interface ImageType {
-    uri: string;
-    type: string;
-    fileName: string;
-}
-
-interface languageType {
-    id: number;  // ✅ Change from string to number
-    name: string;
-}
-
-interface FireBaseUsers {
-    id: string,
-    name: string,
-    age: string;
-    gender: string;
-    profession: string;
-    education: string;
-    height: string;
-    weight: string;
-    languages: languageType[];
-    hobbies: string;
-    religion: string;
-    sect: string;
-    city: string;
-    employmentStatus: string;
-    maritalStatus: string;
-    uri:string;
-    extraImages: ImageType[] | null;
-    profileImage: ImageType | null;
-    dateOfBirth: string | undefined;
-}
-
-// type RootStackParamList = {
-//     Details: { item: FireBaseUsers };
-// }
-
 interface UserCardProps {
     item: UserProfileType;
 }
@@ -118,6 +81,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         overflow: 'hidden',
         margin: 10,
+        alignSelf:"flex-start",
     },
     imageStyle: {
         width: '100%',
@@ -131,14 +95,14 @@ const styles = StyleSheet.create({
     userName: {
         fontSize: 18,
         fontWeight: 'bold',
-        textAlign: 'left', // ✅ FIXED
+        textAlign: 'left',
         paddingHorizontal: 8,
         paddingVertical: 6,
         color: '#fff',
     },
     occupation: {
         fontSize: 16,
-        textAlign: 'left', // ✅ FIXED
+        textAlign: 'left',
         color: '#fff',
         paddingHorizontal: 8,
     },

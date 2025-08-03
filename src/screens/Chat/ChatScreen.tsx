@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, FlatList, Dimensions, Image, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, FlatList, Dimensions, Image, TouchableOpacity, TextInput, Pressable } from 'react-native'
 import React, { memo, useCallback, useEffect, useState } from 'react'
 import { collection, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -6,12 +6,11 @@ import { getApp } from '@react-native-firebase/app'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/Types'
-import { FireBaseUsers } from '../Home/Home'
 import { getItem } from '../../utils/MMKV_STORAGE/mmkvStorage'
 import BubbleLoading from '../Animations/BubbleAnimation'
 import { UserProfileType } from '../../navigation/TypescriptTypes/UserType';
-import FastImage from 'react-native-fast-image';
-
+import Ionicons from 'react-native-vector-icons/Ionicons'
+import { opacity } from 'react-native-reanimated/lib/typescript/Colors'
 
 const MemoizedRenderItem = memo(({ item, userId, navigation }: { item: UserProfileType, userId: string | null, navigation: ChatScreenNavigationProp }) => (
     <TouchableOpacity
@@ -30,7 +29,7 @@ const MemoizedRenderItem = memo(({ item, userId, navigation }: { item: UserProfi
                 uri: item?.profileImage?.uri,
             }}
             resizeMode='cover'
-        />           
+        />
         <Text style={styles.userName}>{item.name}</Text>
     </TouchableOpacity>
 ))
@@ -44,6 +43,8 @@ const ChatScreen: React.FC = () => {
     const navigation = useNavigation<ChatScreenNavigationProp>();
     const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [filteredUsers, setFilteredUsers] = useState<UserProfileType[]>([]);
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
     useEffect(() => {
         const getUserData = async () => {
@@ -66,7 +67,8 @@ const ChatScreen: React.FC = () => {
                     ...(doc.data() as UserProfileType),
                 }))
 
-                setUsers(fetchedUsers);                
+                setUsers(fetchedUsers);
+                setFilteredUsers(fetchedUsers);
             } catch (error: any) {
                 console.log("Error: ", error);
             } finally {
@@ -75,6 +77,19 @@ const ChatScreen: React.FC = () => {
         };
         getUserData();
     }, []);
+
+    // Function to handle search input
+    const handleSearch = (query: string) => {
+        setSearchQuery(query);
+        if (query.trim() === '') {
+            setFilteredUsers(users); // Show all users if search is empty
+        } else {
+            const filtered = users.filter((user) =>
+                user?.name.toLowerCase().includes(query.toLowerCase())
+            );
+            setFilteredUsers(filtered);
+        }
+    };
 
 
     const renderItem = useCallback(({ item }: { item: UserProfileType }) => (
@@ -86,12 +101,28 @@ const ChatScreen: React.FC = () => {
             <View style={styles.headerContainer}>
                 <Text style={styles.appnameText}>eternalvows chats</Text>
             </View>
+
+            {/* Search Bar */}
+            <View style={styles.searchInputContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="Search users..."
+                    placeholderTextColor={"gray"}
+                    cursorColor={"#ff008c"}
+                    value={searchQuery}
+                    onChangeText={handleSearch}
+                />
+                <Pressable style={({ pressed }) => [styles.searchIcon,{ opacity: pressed ? 0.5 : 1 }]} onPress={()=>handleSearch(searchQuery)}>
+                    <Ionicons name="search" size={28} color="#fff" />
+                </Pressable>
+            </View>
+
             {loading ?
                 (<BubbleLoading />)
                 : (
                     <FlatList
                         keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
-                        data={users}
+                        data={filteredUsers}
                         renderItem={renderItem} // Use a separate memoized function
                         initialNumToRender={10} // Render only 10 items initially
                         maxToRenderPerBatch={10} // Load 10 at a time
@@ -154,5 +185,34 @@ const styles = StyleSheet.create({
         fontWeight: "500",
         color: "#4e4f4f",
         marginLeft: 20,
+    },
+    searchInputContainer: {
+        overflow: "hidden",
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#fff",
+        borderRadius: 25,
+        borderWidth: 1,
+        borderColor: "#ff008c",
+        paddingHorizontal: 10,
+        width: "90%",
+        alignSelf: "center",
+        marginVertical: 10,
+        position: "relative",
+        marginTop:20,
+    },
+    searchInput: {
+        color:"#ff008c",
+        flex: 1,
+        fontSize: 16,
+        paddingVertical: 10,
+        paddingRight: 40, // 🔥 Ensures text does not overlap the icon
+    },
+    searchIcon: {
+        position: "absolute",
+        right: 0,
+        backgroundColor: "#ff008c",
+        borderRadius: 30,
+        padding: 10,
     },
 })

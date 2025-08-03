@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, ScrollView, Pressable, FlatList } from 'react-native';
+import { View, Text, Image, StyleSheet, ScrollView, Pressable, FlatList, TouchableOpacity } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons';
@@ -127,6 +127,9 @@ const Details: React.FC = () => {
           keyExtractor={(_, index) => index.toString()}
         />
       </View>
+      <TouchableOpacity style={styles.connectButton} onPress={() => navigation.navigate("ActiveChatScreen", { data: item, id: item?.userId })}>
+                    <Text style={styles.connectButtonText}>Send Message</Text>
+                  </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -232,5 +235,20 @@ const styles = StyleSheet.create({
     height: 250,
     borderRadius: 12,
     marginRight: 10,
+  },
+  connectButton: {
+    backgroundColor: "#ff008c",
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: "center",
+    marginBottom: 20,
+    marginTop:15,
+    width:"90%",
+    alignSelf:"center",
+  },
+  connectButtonText: {
+    fontSize: 16,
+    color: "#fff",
+    fontWeight: "600",
   },
 });

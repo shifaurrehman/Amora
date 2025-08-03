@@ -75,7 +75,7 @@ const SplashScreen: React.FC = () => {
 
     return (
         <View style={styles.mainContainer}>
-            <Animated.Text style={[styles.appName, { opacity: fadeAnim, transform: [{ translateY: translateYAnim }] }]}>
+            <Animated.Text testID="welcomeText" style={[styles.appName, { opacity: fadeAnim, transform: [{ translateY: translateYAnim }] }]}>
                 EternalVows
             </Animated.Text>
         </View>

@@ -1,6 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Keyboard } from 'react-native';
 import AuthenticationButton from '../../components/Button/AuthenticationButton';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getApp } from '@react-native-firebase/app';
@@ -57,6 +57,7 @@ const LoginScreen: React.FC = () => {
 
   
   const handleLoginWithFirebase = useCallback(async() => {
+    Keyboard.dismiss();
     setIsLoading(true);
     if (!validate()) {
       setIsLoading(false);
@@ -119,6 +120,7 @@ const LoginScreen: React.FC = () => {
 
       {/* Email Input */}
       <TextInput
+       testID="email-input"
         style={[styles.input]}
         placeholder="Email"
         placeholderTextColor="#888"
@@ -131,6 +133,7 @@ const LoginScreen: React.FC = () => {
 
       {/* Password Input */}
       <TextInput
+      testID="password-input"
         style={[styles.input, styles.passwordInput]}
         placeholder="Password"
         placeholderTextColor="#888"
@@ -142,12 +145,12 @@ const LoginScreen: React.FC = () => {
 
 
       {/* Login Button */}
-      <AuthenticationButton onPress={handleLoginWithFirebase} bgColor={"#ff008c"} title={"Login"} textColor={"#fff"} buttonWidth={"100%"} isLoading={isLoading} />
+      <AuthenticationButton testID="login-button" onPress={handleLoginWithFirebase} bgColor={"#ff008c"} title={"Login"} textColor={"#fff"} buttonWidth={"100%"} isLoading={isLoading} />
     
       {/* Register Link */}
       < View style={styles.registerContainer} >
         <Text style={styles.registerText}> Don't have an account? </Text>
-        < TouchableOpacity onPress={() => navigation.navigate("Signup")}>
+        < TouchableOpacity testID="register-button" onPress={() => navigation.navigate("Signup")}>
           <Text style={styles.registerLink}> Register here </Text>
         </TouchableOpacity>
       </View>

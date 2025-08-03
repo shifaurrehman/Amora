@@ -40,13 +40,14 @@ export default ShimmerUserCard;
 
 const styles = StyleSheet.create({
   mainCard: {
-    width: '45%',
+    width: 170,
     height: 230,
     elevation: 4,
     backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
     margin: 10,
+    alignSelf:"flex-start",
   },
   imageStyle: {
     width: '100%',

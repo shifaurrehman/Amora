@@ -20,9 +20,8 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onApply }) 
   const dispatch = useDispatch();
 
   const applyFilters = useCallback(async () => {
-    const filteredProfiles = await fetchFilteredProfiles(ageRange, religion, gender);
+    const filteredProfiles = await fetchFilteredProfiles(ageRange, religion, gender);    
     dispatch(setFilteredProfiles(filteredProfiles))
-
     onApply({ ageRange, religion, gender });
     onClose();
   }, [ageRange, religion, gender, dispatch, onApply, onClose]);
