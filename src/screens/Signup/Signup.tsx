@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, Image, ScrollView, TextInput, TouchableOpacity, Alert, Keyboard } from 'react-native';
 import React, { useState } from 'react';
 import AuthenticationButton from '../../components/Button/AuthenticationButton';
 import { useNavigation } from '@react-navigation/native';
@@ -80,6 +80,7 @@ const Signup: React.FC = () => {
   };
 
   const signupWithFirebase = async () => {
+    Keyboard.dismiss();
     if (validate()) {
       setIsLoading(true);
       try {

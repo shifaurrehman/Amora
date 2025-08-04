@@ -9,6 +9,8 @@ import { getFirestore, collection, query, where, getDocs, doc, getDoc } from '@r
 import { RootStackParamList } from '../../navigation/Types';
 import { setItem } from '../../utils/MMKV_STORAGE/mmkvStorage';
 import { storeUserToken } from '../../Api/StoreUserToken';
+import { emailRegex, passwordRegex } from '../../services/Regex/Regex';
+import { emptyEmailMessage, emptyPasswordMessage, invalidEmailMessage, invalidPasswordMessage } from '../../services/ValidationMessages/ValidationMessage';
 
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
@@ -31,21 +33,21 @@ const LoginScreen: React.FC = () => {
   const validate = (): boolean => {
     let isValid = true;
     if (!email) {
-      setEmailError('Please fill in all fields');
+      setEmailError(emptyEmailMessage);
       isValid = false;
-    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/.test(email)) {
-      setEmailError("Your email format is invalid");
+    } else if (!emailRegex.test(email)) {
+      setEmailError(invalidEmailMessage);
       isValid = false;
     } else {
       setEmailError(false);
     }
 
     if (!password) {
-      setPasswordError("please fill in all fields");
+      setPasswordError(emptyPasswordMessage);
       isValid = false;
     }
-    else if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/.test(password)) {
-      setPasswordError("Your password must be at least 8 characters and contain both letters and numbers.");
+    else if (!passwordRegex.test(password)) {
+      setPasswordError(invalidPasswordMessage);
       isValid = false;
     }
     else {
