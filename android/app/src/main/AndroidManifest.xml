@@ -35,6 +35,7 @@
     <!-- Storage Permissions (Android 10+ Scoped Storage Compliance) -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     
     <!-- Optional: Query all packages (for file access in some cases) -->
     <!-- <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/> -->
