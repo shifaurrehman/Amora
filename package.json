@@ -20,6 +20,7 @@
     "@react-native-firebase/auth": "^21.11.0",
     "@react-native-firebase/firestore": "^21.11.0",
     "@react-native-firebase/messaging": "^21.11.0",
+    "@react-native-firebase/perf": "^21.14.0",
     "@react-native-firebase/storage": "^21.11.0",
     "@react-native-google-signin/google-signin": "^13.2.0",
     "@react-navigation/bottom-tabs": "^7.2.0",
@@ -85,29 +86,28 @@
     "node": ">=18"
   },
   "detox": {
-  "test-runner": "jest",
-  "runner-config": "e2e/config.json",
-  "apps": {
-    "android.debug": {
-      "type": "android.apk",
-      "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
-      "build": "cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd .."
-    }
-  },
-  "devices": {
-    "emulator": {
-      "type": "android.emulator",
-      "device": {
-        "avdName": "Pixel_5_API_34"
+    "test-runner": "jest",
+    "runner-config": "e2e/config.json",
+    "apps": {
+      "android.debug": {
+        "type": "android.apk",
+        "binaryPath": "android/app/build/outputs/apk/debug/app-debug.apk",
+        "build": "cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug && cd .."
+      }
+    },
+    "devices": {
+      "emulator": {
+        "type": "android.emulator",
+        "device": {
+          "avdName": "Pixel_5_API_34"
+        }
+      }
+    },
+    "configurations": {
+      "android.debug": {
+        "device": "emulator",
+        "app": "android.debug"
       }
     }
-  },
-  "configurations": {
-    "android.debug": {
-      "device": "emulator",
-      "app": "android.debug"
-    }
   }
-}
-
 }
