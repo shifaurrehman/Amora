@@ -1,0 +1,147 @@
+Migration Plan: Firebase to Supabase
+This plan outlines the steps to migrate the Amora project from Firebase to Supabase, ensuring a seamless transition for authentication, data storage, and push notifications.
+
+Proposed Changes
+1. Database Schema (Supabase/PostgreSQL)
+We will create the following tables in Supabase to replace Firestore collections.
+
+public.users_profiles
+id
+: uuid (Primary Key, references auth.users.id)
+name: text
+age: int4
+gender: text
+profession: text
+education: text
+height: text
+weight: text
+languages: text[]
+hobbies: text[]
+religion: text
+sect: text
+city: text
+about: text
+profile_image: jsonb
+extra_images: jsonb
+employment_status: text
+marital_status: text
+date_of_birth: timestamp
+fcm_token: text
+created_at: timestamptz (Default: now())
+public.chats
+id
+: text (Primary Key, format: userA_userB)
+created_at: timestamptz (Default: now())
+public.messages
+id
+: uuid (Primary Key, Default: uuid_generate_v4())
+chat_id: text (Foreign Key to chats.id)
+text: text
+send_by: uuid (Foreign Key to auth.users.id)
+send_to: uuid (Foreign Key to auth.users.id)
+created_at: timestamptz (Default: now())
+user_data: jsonb (GiftedChat compatible user object)
+2. Authentication
+Switch Provider: Replace @react-native-firebase/auth with @supabase/supabase-js.
+Update Logic: Modify 
+Login.tsx
+ and 
+Signup.tsx
+ to use supabase.auth.signInWithPassword and supabase.auth.signUp.
+Session Management: Update Redux/Sagas to handle Supabase sessions.
+3. File Storage
+Switch Provider: Replace @react-native-firebase/storage with Supabase Storage buckets.
+Buckets: Create a profiles bucket for user images.
+4. Push Notifications (FCM via Edge Functions)
+Since Supabase doesn't have a direct FCM service, we will:
+
+Trigger: Create a PostgreSQL trigger on the messages table.
+Edge Function: The trigger calls a Supabase Edge Function.
+FCM: The Edge Function sends the push notification using the recipient's fcm_token stored in users_profiles.
+5. Code Modifications
+5. Supabase Configuration
+You will need to create a Supabase project and provide the following:
+
+SUPABASE_URL
+SUPABASE_ANON_KEY
+6. Code Modifications
+[NEW] 
+supabaseClient.ts
+Initialize the Supabase client.
+
+[MODIFY] 
+Login.tsx
+Replace Firebase login with Supabase login.
+
+[MODIFY] 
+Signup.tsx
+Replace Firebase signup with Supabase signup.
+
+[MODIFY] 
+ActiveChatScreen.tsx
+Replace Firestore real-time listeners and writes with Supabase equivalents.
+
+SQL Schema Script
+Run this in your Supabase SQL Editor:
+
+sql
+-- 1. Enable UUID extension
+create extension if not exists "uuid-ossp";
+-- 2. Create Profiles Table
+create table public.users_profiles (
+  id uuid references auth.users not null primary key,
+  name text,
+  age int4,
+  gender text,
+  profession text,
+  education text,
+  height text,
+  weight text,
+  languages text[],
+  hobbies text[],
+  religion text,
+  sect text,
+  city text,
+  about text,
+  profile_image jsonb,
+  extra_images jsonb,
+  employment_status text,
+  marital_status text,
+  date_of_birth timestamp,
+  fcm_token text,
+  created_at timestamptz default now()
+);
+-- 3. Create Chats Table
+create table public.chats (
+  id text primary key,
+  created_at timestamptz default now()
+);
+-- 4. Create Messages Table
+create table public.messages (
+  id uuid default uuid_generate_v4() primary key,
+  chat_id text references public.chats(id),
+  text text not null,
+  send_by uuid references auth.users(id),
+  send_to uuid references auth.users(id),
+  user_data jsonb,
+  created_at timestamptz default now()
+);
+-- 5. Set up Row Level Security (RLS)
+alter table public.users_profiles enable row level security;
+alter table public.chats enable row level security;
+alter table public.messages enable row level security;
+-- Policies for Profiles
+create policy "Public profiles are viewable by everyone." on public.users_profiles for select using (true);
+create policy "Users can update their own profile." on public.users_profiles for update using (auth.uid() = id);
+-- Policies for Messages
+create policy "Users can view messages in their chats." on public.messages for select using (auth.uid() = send_by or auth.uid() = send_to);
+create policy "Users can insert messages in their chats." on public.messages for insert with check (auth.uid() = send_by);
+Verification Plan
+Manual Verification
+Signup/Login: Create a new account and log in using Supabase Auth.
+Profile Creation: Save a user profile and verify it appears in the users_profiles table.
+Real-time Chat: Open two app instances, send messages, and verify they appear instantly in both using Supabase Realtime.
+Push Notifications: Send a message when one app is in the background and verify the notification is received (via Edge Function).
+SQL Setup
+I will provide the exact SQL script to run in the Supabase Dashboard SQL Editor once you approve the plan.
+
