@@ -99,7 +99,7 @@ const ChatScreen: React.FC = () => {
     return (
         <View style={styles.mainContainer}>
             <View style={styles.headerContainer}>
-                <Text style={styles.appnameText}>eternalvows chats</Text>
+                <Text style={styles.appnameText}>Amora chats</Text>
             </View>
 
             {/* Search Bar */}

@@ -7,6 +7,7 @@ import createSagaMiddleware from 'redux-saga';
 import authReducer from './authSlice';
 import filterReducer from './FilteredUsersSlice'
 import profileReducer from './profileSlice';
+import chatReducer from './chatSlice';
 import { watchAuthSaga } from "./saga/authSaga";
 import { ProfileSaga } from "./saga/ProfileSaga";
 import { FilteredUsersSaga } from "./saga/FilteredUsersSaga";
@@ -28,7 +29,7 @@ const store = configureStore({
         profile:profileReducer,
         favorites: persisitedFavoriteReducer,
         filteredUsers: filterReducer,
-
+        chat: chatReducer
     },
     middleware:(getDefaultMiddleware)=> getDefaultMiddleware({
         serializableCheck:false
