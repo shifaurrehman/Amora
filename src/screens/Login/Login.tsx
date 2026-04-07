@@ -11,6 +11,7 @@ import { setItem } from '../../utils/MMKV_STORAGE/mmkvStorage';
 import { storeUserToken } from '../../Api/StoreUserToken';
 import { emailRegex, passwordRegex } from '../../services/Regex/Regex';
 import { emptyEmailMessage, emptyPasswordMessage, invalidEmailMessage, invalidPasswordMessage } from '../../services/ValidationMessages/ValidationMessage';
+import { saveUserToken } from '../../utils/fcm-service/token-management';
 
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
@@ -84,7 +85,8 @@ const LoginScreen: React.FC = () => {
   
         if (!querySnapshot.empty) {          
           const idToken = await user.getIdToken();
-          await storeUserToken(idToken).then(() => {
+          await storeUserToken(idToken).then(async () => {
+            await saveUserToken(uid);
             navigation.replace("Home");
           });
         } else {
