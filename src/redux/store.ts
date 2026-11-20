@@ -4,11 +4,7 @@ import favoritesReducer from './favoriteSlice';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { persistReducer,  persistStore } from 'redux-persist';
 import createSagaMiddleware from 'redux-saga';
-import authReducer from './authSlice';
 import filterReducer from './FilteredUsersSlice'
-import profileReducer from './profileSlice';
-import { watchAuthSaga } from "./saga/authSaga";
-import { ProfileSaga } from "./saga/ProfileSaga";
 import { FilteredUsersSaga } from "./saga/FilteredUsersSaga";
 
 const sagaMiddleware = createSagaMiddleware();
@@ -24,8 +20,6 @@ const persisitedFavoriteReducer = persistReducer(persistConfig, favoritesReducer
 
 const store = configureStore({
     reducer: {
-        auth: authReducer,
-        profile:profileReducer,
         favorites: persisitedFavoriteReducer,
         filteredUsers: filterReducer,
 
@@ -35,8 +29,6 @@ const store = configureStore({
     }).concat(sagaMiddleware)
 })
 
-sagaMiddleware.run(watchAuthSaga);
-sagaMiddleware.run(ProfileSaga);
 sagaMiddleware.run(FilteredUsersSaga);
 
 export const persistor = persistStore(store);

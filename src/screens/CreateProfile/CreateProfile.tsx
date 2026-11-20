@@ -536,7 +536,7 @@ const CreateProfile: React.FC<{ navigation: CreateProfileScreenNavigationProp }>
                     </Text>
                 }
 
-                <AuthenticationButton title='Select Your Date of Birth' bgColor='#ff008c' textColor='#fff' buttonWidth={"100%"} marginFromTop={"0"} onPress={showDatePicker} />
+                <AuthenticationButton title='Select Your Date of Birth' bgColor='#ff008c' textColor='#fff' buttonWidth={"100%"} marginFromTop={0} onPress={showDatePicker} />
 
                 {/* Show the Date Picker */}
                 {showPicker && (

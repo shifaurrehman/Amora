@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from "react";
-import {View,Text,StyleSheet,Image,ScrollView,TouchableOpacity} from "react-native";
-import { User, Users } from "../../dummydata/Users";
+import { Alert, View, Text, StyleSheet, Image, ScrollView, TouchableOpacity } from "react-native";
+import { User } from "../../dummydata/Users";
 import { getprofileImagePath } from "../../utils/profileImage";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../navigation/Types";
 import { getItem, removeItem } from "../../utils/MMKV_STORAGE/mmkvStorage";
 import { getApp } from "@react-native-firebase/app";
 import { collection, getDocs, getFirestore, query, where } from "@react-native-firebase/firestore";
 import BubbleLoading from "../Animations/BubbleAnimation";
+import { supabase } from "../../lib/supabase";
 
 type UserProfileProps = {
   user?: User
@@ -20,7 +23,7 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
   const [profileData, setProfileData] = useState<any>(null);
   const [ProfileImageLocal, setProfileImageLocal] = useState<any>();
   const [loading, setLoading] = useState<boolean>(true);
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
 
 
@@ -84,8 +87,21 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
   }, []); // Runs only once 
 
   const logOut = async () => {
-    await AsyncStorage.removeItem("userProfile");
-    removeItem("UserToken");
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      Alert.alert("Log out failed", error.message);
+      return;
+    }
+
+    try {
+      await AsyncStorage.removeItem("userProfile");
+    } catch (cacheError: unknown) {
+      Alert.alert(
+        "Local profile cache",
+        cacheError instanceof Error ? cacheError.message : "Could not clear the local profile cache.",
+      );
+    }
+    removeItem("USERUID");
     navigation.navigate("Login");
   }
 

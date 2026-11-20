@@ -1,4 +1,5 @@
 import { Text, ActivityIndicator, StyleSheet, Pressable, } from 'react-native';
+import type { DimensionValue } from 'react-native';
 import React from 'react';
 
 // Define prop types
@@ -6,10 +7,11 @@ interface AuthenticationButtonProps {
     bgColor?: string;
     textColor?: string;
     title: string;
-    buttonWidth?: string | number;
+    buttonWidth?: DimensionValue;
     isLoading?: boolean;
     onPress: () => void;
-    marginFromTop?: string | number;
+    marginFromTop?: DimensionValue;
+    testID?: string;
 }
 
 const AuthenticationButton: React.FC<AuthenticationButtonProps> = ({
@@ -19,10 +21,12 @@ const AuthenticationButton: React.FC<AuthenticationButtonProps> = ({
     buttonWidth,
     isLoading,
     onPress,
-    marginFromTop
+    marginFromTop,
+    testID,
 }) => {
     return (
         <Pressable
+            testID={testID}
             onPress={onPress}
             style={({ pressed }: { pressed: boolean }) => [styles.button, { backgroundColor: bgColor || "#ff008c", width: buttonWidth || "90%", height: 55, opacity: pressed ? 0.8 : 1, marginTop: marginFromTop? marginFromTop: 30  }]}
         >

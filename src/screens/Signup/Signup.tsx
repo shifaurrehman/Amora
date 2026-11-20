@@ -3,15 +3,8 @@ import React, { useState } from 'react';
 import AuthenticationButton from '../../components/Button/AuthenticationButton';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { createUserWithEmailAndPassword, getAuth, updateProfile } from '@react-native-firebase/auth'
-import { getApp } from '@react-native-firebase/app';
-
-type RootStackParamList = {
-  Otp: {
-    email: string;
-  }
-  Login: undefined;
-}
+import { RootStackParamList } from '../../navigation/Types';
+import { supabase } from '../../lib/supabase';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -79,31 +72,33 @@ const Signup: React.FC = () => {
     return isValid;
   };
 
-  const signupWithFirebase = async () => {
+  const signup = async () => {
     Keyboard.dismiss();
     if (validate()) {
       setIsLoading(true);
       try {
-        const auth = getAuth(getApp());
-        const response = await createUserWithEmailAndPassword(auth, email, password);
-        // console.log(response);
-
-        await updateProfile(response.user, {
-          displayName: name, // Set user name
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: { display_name: name.trim() },
+          },
         });
+        if (error) throw error;
+        if (!data.user) throw new Error('Supabase did not return the new user.');
 
-        await response.user.sendEmailVerification();
+        if (data.session) {
+          const { error: signOutError } = await supabase.auth.signOut();
+          if (signOutError) throw signOutError;
+        }
         Alert.alert("Account created", "Please check your email to verify your account and then login.");
-
         navigation.navigate("Login");
-      } catch (error: any) {
-        console.log("Signup failed: ", error.message.replace(/^\[.*?\]\s*/, ""));
-        let errorMessage = "Something went wrong. Please try again.";
-        if (error.code === "auth/email-already-in-use") errorMessage = "Email is already in use.";
-        else if (error.code === "auth/invalid-email") errorMessage = "Invalid email format.";
-        else if (error.code === "auth/weak-password") errorMessage = "Password should be at least 6 characters.";
-        Alert.alert("Signup failed: ", errorMessage)
-      }finally{
+      } catch (error: unknown) {
+        Alert.alert(
+          'Signup failed',
+          error instanceof Error ? error.message : 'Something went wrong. Please try again.',
+        );
+      } finally {
         setIsLoading(false);
       }
     }
@@ -161,7 +156,7 @@ const Signup: React.FC = () => {
         )}
 
         {/* Signup button */}
-        <AuthenticationButton onPress={signupWithFirebase} title={"Signup"} buttonWidth={"100%"} bgColor={"#ff008c"} textColor={"#fff"} isLoading={isLoading} />
+        <AuthenticationButton onPress={signup} title={"Signup"} buttonWidth={"100%"} bgColor={"#ff008c"} textColor={"#fff"} isLoading={isLoading} />
 
         {/* Register Link */}
         <View style={styles.registerContainer}>

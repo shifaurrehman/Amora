@@ -5,7 +5,6 @@ export type RootStackParamList = {
     Splash: undefined;
     Login: undefined; 
     Signup: undefined;
-    Otp: { email: string };  
     Home: undefined;     
     Details: {item:UserProfileType};
     Favorites:undefined;
