@@ -3,7 +3,7 @@ import { View, Text, Modal, Pressable, StyleSheet, ScrollView } from 'react-nati
 import Slider from '@react-native-community/slider';
 import CustomDropdown from '../Dropdown/CreateProfile/DropdownSelector';
 import { dummydataforreligions, genderOptions } from '../../screens/CreateProfile/dummydata';
-import { fetchFilteredProfiles } from '../../utils/FiltersLogic/FetchFilteredData';
+import { fetchFilteredProfilesByFilters } from '../../utils/FiltersLogic/FetchFilteredData';
 import { useDispatch } from 'react-redux';
 import { setFilteredProfiles } from '../../redux/FilteredUsersSlice';
 
@@ -20,7 +20,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ visible, onClose, onApply }) 
   const dispatch = useDispatch();
 
   const applyFilters = useCallback(async () => {
-    const filteredProfiles = await fetchFilteredProfiles(ageRange, religion, gender);    
+    const filteredProfiles = await fetchFilteredProfilesByFilters(ageRange, religion, gender);
     dispatch(setFilteredProfiles(filteredProfiles))
     onApply({ ageRange, religion, gender });
     onClose();

@@ -7,17 +7,13 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../../navigation/Types";
 import { getItem, removeItem } from "../../utils/MMKV_STORAGE/mmkvStorage";
-import { getApp } from "@react-native-firebase/app";
-import { collection, getDocs, getFirestore, query, where } from "@react-native-firebase/firestore";
 import BubbleLoading from "../Animations/BubbleAnimation";
 import { supabase } from "../../lib/supabase";
+import { fetchOwnProfile } from "../../services/supabase/profiles";
 
 type UserProfileProps = {
   user?: User
 }
-
-const app = getApp();
-const db = getFirestore(app);
 
 const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
   const [profileData, setProfileData] = useState<any>(null);
@@ -31,7 +27,6 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
     const fetchUserData = async () => {
       setLoading(true);
       try{
-        const localStorageData = await AsyncStorage.getItem("userProfile");
         const uid = getItem("USERUID");
 
         if (!uid) {
@@ -39,27 +34,32 @@ const UserProfile: React.FC<UserProfileProps> = ({ user }) => {
           return;
         }
 
-        if (localStorageData) {
-          const parsedData = JSON.parse(localStorageData);
-          
-          // Check if the userId in local storage matches the UID from MMKV
-          if (parsedData?.userId === uid) {
-            setProfileData(parsedData);
+        try {
+          // Fetch fresh from Supabase so the private-bucket image URLs are
+          // current; the local cache is only a fallback when offline.
+          const freshProfile = await fetchOwnProfile(uid);
+          if (freshProfile) {
+            await AsyncStorage.setItem("userProfile", JSON.stringify(freshProfile));
+            setProfileData(freshProfile);
             setLoading(false);
             return;
           }
-            await AsyncStorage.removeItem("userProfile"); // Remove the old data
+          await AsyncStorage.removeItem("userProfile");
+        } catch (error) {
+          console.log("Error fetching profile from Supabase, falling back to cache", error);
         }
-        const userDoc = collection(db, "usersProfiles");
-        const q = query(userDoc, where("userId", "==", uid));
-        const querySnapshot = await getDocs(q);
-        
-        if(!querySnapshot.empty){
-          const userData = querySnapshot.docs[0].data();
-          await AsyncStorage.setItem("userProfile", JSON.stringify(userData));
-          setProfileData(userData);
-        }else{
-          console.log("No user data found in firestore");
+
+        const localStorageData = await AsyncStorage.getItem("userProfile");
+        if (localStorageData) {
+          const parsedData = JSON.parse(localStorageData);
+          // Only use the cached profile if it belongs to the current account.
+          if (parsedData?.userId === uid) {
+            setProfileData(parsedData);
+          } else {
+            await AsyncStorage.removeItem("userProfile"); // Remove the old data
+          }
+        } else {
+          console.log("No user data found for this account");
         }
       }catch (error){
         console.log("Error in fetchUserData", error);

@@ -1,23 +1,27 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, FlatList, StyleSheet, Text, Pressable } from 'react-native';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../redux/store';
-import { User } from '../../dummydata/Users';
-import { removeFavorite } from '../../redux/favoriteSlice';
+import { useSelector } from 'react-redux';
+import { RootState, useAppDispatch } from '../../redux/store';
+import { loadFavorites, toggleFavorite } from '../../redux/favoriteThunks';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import FavoriteUserCard from '../../components/HomeScreenComp/FavoriteUserCard';
 import { useNavigation } from '@react-navigation/native';
 import { UserProfileType } from '../../navigation/TypescriptTypes/UserType';
+import BubbleLoading from '../Animations/BubbleAnimation';
 
 const FavoritesScreen: React.FC = () => {
   const navigation = useNavigation();
-  
-  const favorites = useSelector((state: RootState) => state.favorites.favorites);
-  
-  const dispatch = useDispatch();
 
-  const handleRemoveFavorite = (userId: number) => {
-    dispatch(removeFavorite(userId)); 
+  const { favorites, loading } = useSelector((state: RootState) => state.favorites);
+
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(loadFavorites());
+  }, [dispatch]);
+
+  const handleRemoveFavorite = (user: UserProfileType) => {
+    dispatch(toggleFavorite(user));
   };
 
   const renderItem = ({ item }: { item: UserProfileType }) => (
@@ -26,7 +30,9 @@ const FavoritesScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {(!favorites || favorites.length === 0) ? (
+      {loading ? (
+        <BubbleLoading />
+      ) : (!favorites || favorites.length === 0) ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="heart-dislike-outline" size={80} color="#ff008c" />
           <Text style={styles.emptyText}>No favorites yet! Start exploring.</Text>
@@ -38,9 +44,9 @@ const FavoritesScreen: React.FC = () => {
         <FlatList
           data={favorites}
           renderItem={renderItem}
-          keyExtractor={(item) => item?.userId}
+          keyExtractor={(item) => item?.userId || item?.id || ''}
           contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false} 
+          showsVerticalScrollIndicator={false}
         />
       )}
     </View>

@@ -6,14 +6,17 @@ import { persistReducer,  persistStore } from 'redux-persist';
 import createSagaMiddleware from 'redux-saga';
 import filterReducer from './FilteredUsersSlice'
 import { FilteredUsersSaga } from "./saga/FilteredUsersSaga";
+import { useDispatch } from "react-redux";
 
 const sagaMiddleware = createSagaMiddleware();
 
-// Redux Persist Configuration
+// Redux Persist Configuration.
+// Favorites are no longer persisted locally: Supabase is the source of truth
+// and the list is reloaded per session (see favoriteThunks).
 const persistConfig = ({
     key : "root",
     storage: AsyncStorage,
-    whitelist:['favorites'],
+    whitelist:[],
 })
 
 const persisitedFavoriteReducer = persistReducer(persistConfig, favoritesReducer)
@@ -35,5 +38,8 @@ export const persistor = persistStore(store);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+
+// Typed dispatch so components can dispatch thunks (favoriteThunks).
+export const useAppDispatch: () => AppDispatch = useDispatch;
 
 export default store;

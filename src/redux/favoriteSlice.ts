@@ -1,61 +1,66 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { User } from '../dummydata/Users'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { UserProfileType } from '../navigation/TypescriptTypes/UserType';
 
-interface ImageType {
-    uri: string;
-    type: string;
-    fileName: string;
+export interface FavoritesState {
+  favorites: UserProfileType[];
+  loading: boolean;
+  error: string | null;
 }
 
-interface languageType {
-    id: number;  // ✅ Change from string to number
-    name: string;
-}
+const initialState: FavoritesState = {
+  favorites: [],
+  loading: false,
+  error: null,
+};
 
-interface FireBaseUsers {
-    id: string,
-    name: string,
-    age: string;
-    gender: string;
-    profession: string;
-    education: string;
-    height: string;
-    weight: string;
-    languages: languageType[];
-    hobbies: string;
-    religion: string;
-    sect: string;
-    city: string;
-    employmentStatus: string;
-    maritalStatus: string;
-    extraImages: ImageType[] | null;
-    profileImage: ImageType | null;
-    dateOfBirth: string | undefined;
-}
-
-interface favoriteState {
-    favorites: FireBaseUsers[];
-}
-
-const initialState: favoriteState = {
-    favorites: [],
-}
+export const favoriteKeyOf = (user: UserProfileType): string | undefined =>
+  user.id ?? user.userId;
 
 const favoriteSlice = createSlice({
-    name: "favorites",
-    initialState,
-    reducers: {
-        addFavorites: (state, action: PayloadAction<FireBaseUsers>) => {
-            // Prevent duplicates
-            if (!state.favorites.some(user => user.id === action.payload.id)) {
-                state.favorites.push(action.payload);
-            }
-        },
-        removeFavorite: (state, action: PayloadAction<string>) => {
-            state.favorites = state.favorites.filter(user => user.id !== action.payload);
-        }
-    }
-})
+  name: 'favorites',
+  initialState,
+  reducers: {
+    favoritesLoading(state) {
+      state.loading = true;
+      state.error = null;
+    },
+    favoritesLoaded(state, action: PayloadAction<UserProfileType[]>) {
+      state.favorites = action.payload || [];
+      state.loading = false;
+    },
+    favoritesLoadFailed(state, action: PayloadAction<string>) {
+      state.loading = false;
+      state.error = action.payload;
+    },
+    favoriteAdded(state, action: PayloadAction<UserProfileType>) {
+      const key = favoriteKeyOf(action.payload);
+      if (key && !state.favorites.some((user) => favoriteKeyOf(user) === key)) {
+        state.favorites.push(action.payload);
+      }
+    },
+    favoriteRemoved(state, action: PayloadAction<string>) {
+      state.favorites = state.favorites.filter(
+        (user) => favoriteKeyOf(user) !== action.payload,
+      );
+    },
+    favoritesError(state, action: PayloadAction<string>) {
+      state.error = action.payload;
+    },
+  },
+});
 
-export const { addFavorites, removeFavorite } = favoriteSlice.actions;
+export const {
+  favoritesLoading,
+  favoritesLoaded,
+  favoritesLoadFailed,
+  favoriteAdded,
+  favoriteRemoved,
+  favoritesError,
+} = favoriteSlice.actions;
+
+export const selectFavoriteKeys = (state: { favorites: FavoritesState }): string[] =>
+  state.favorites.favorites
+    .map(favoriteKeyOf)
+    .filter((key): key is string => Boolean(key));
+
 export default favoriteSlice.reducer;
