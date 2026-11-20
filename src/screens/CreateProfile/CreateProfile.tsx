@@ -7,21 +7,22 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import AuthenticationButton from '../../components/Button/AuthenticationButton';
 import DropdownSelector from '../../components/Dropdown/CreateProfile/DropdownSelector';
 import dummylanguages, { dummycities, dummydataforreligions, dummyeducationLevels, dummyemploymentStatus, dummymaritalStatus, dummyprofessions, islamicSects, genderOptions } from './dummydata';
-import { getApp } from '@react-native-firebase/app';
-import { addDoc, collection, getFirestore } from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RNFS from 'react-native-fs';
 import { getprofileImagePath, saveProfileImageToFile } from '../../utils/profileImage';
 import MultiSelectDropdown from '../../components/Dropdown/CreateProfile/MultiSelect';
 import CameraRoll from "@react-native-camera-roll/camera-roll";
-import { uploadProfileImage } from '../../utils/UploadImages';
 import { useRoute } from '@react-navigation/native';
 import { PermissionsAndroid, } from "react-native";
+import { saveProfile as saveProfileToSupabase } from '../../services/supabase/profiles';
+import { fetchOwnProfile } from '../../services/supabase/profiles';
+import { validatePickedImage } from '../../services/supabase/media';
 
 interface ImageType {
     uri: string;
     type: string;
     fileName: string;
+    fileSize?: number;
 }
 
 
@@ -120,7 +121,8 @@ const CreateProfile: React.FC<{ navigation: CreateProfileScreenNavigationProp }>
                 profileImage: {
                     uri: selectedImage.uri,
                     type: selectedImage.type || "image/jpeg",
-                    fileName: selectedImage.fileName || `profile-${Date.now()}.jpg`
+                    fileName: selectedImage.fileName || `profile-${Date.now()}.jpg`,
+                    fileSize: selectedImage.fileSize,
                 } as ImageType,
             }));
         }
@@ -135,7 +137,8 @@ const CreateProfile: React.FC<{ navigation: CreateProfileScreenNavigationProp }>
                 const selectedImages: ImageType[] = newImages.map((image) => ({
                     uri: image.uri!,
                     type: image.type || "image/jpeg",
-                    fileName: image.fileName || `image-${Date.now()}.jpg`
+                    fileName: image.fileName || `image-${Date.now()}.jpg`,
+                    fileSize: image.fileSize,
                 }))
 
                 setProfile((prevProfile) => ({
@@ -193,27 +196,24 @@ const CreateProfile: React.FC<{ navigation: CreateProfileScreenNavigationProp }>
         }
         try {
             const userId = uid;
-            let uploadedImageUrl = profile.profileImage?.uri; // Keep existing image if already uploaded
 
-            // 🔹 If the image is local, upload it first
-            if (profile.profileImage && !profile.profileImage.uri.startsWith("http")) {
-                console.log("Uploading Profile Image...");
-                uploadedImageUrl = await uploadProfileImage(profile.profileImage);
-
-                if (!uploadedImageUrl) {
-                    throw new Error("Image upload failed");
+            // 🔹 Validate images against the private bucket's limits
+            // (JPEG/PNG/WebP, max 5 MiB) before touching Supabase.
+            if (profile.profileImage) {
+                const avatarCheck = validatePickedImage(profile.profileImage);
+                if (!avatarCheck.valid) {
+                    setLoading(false);
+                    Alert.alert("Invalid profile picture", avatarCheck.error || "Please choose a different image.");
+                    return;
                 }
-                console.log("Image Uploaded Successfully:", uploadedImageUrl);
-
-                // 🔹 Update the profile state
-                setProfile((prevProfile) => ({
-                    ...prevProfile,
-                    profileImage: {
-                        uri: uploadedImageUrl,
-                        type: "image/jpeg",
-                        fileName: "uploaded.jpg"
-                    } as ImageType,
-                }));
+            }
+            for (const image of profile.extraImages) {
+                const imageCheck = validatePickedImage(image);
+                if (!imageCheck.valid) {
+                    setLoading(false);
+                    Alert.alert("Invalid extra picture", imageCheck.error || "Please choose a different image.");
+                    return;
+                }
             }
 
             //  save 🙋‍♂️PROFILE_IMAGE in gallery
@@ -257,7 +257,7 @@ const CreateProfile: React.FC<{ navigation: CreateProfileScreenNavigationProp }>
                     } else {
                         console.error("Permission Denied!");
                     }
-                    
+
 
                     console.log("Image saved to gallery", galleryImagePath);
 
@@ -266,35 +266,9 @@ const CreateProfile: React.FC<{ navigation: CreateProfileScreenNavigationProp }>
                 }
             }
 
-            // 🔹 Upload extra images if needed
-            const newExtraImages: ImageType[] = [];
-
-            for (const image of profile.extraImages) {
-                if (!image.uri.startsWith("http")) {
-                    console.log("Uploading extra image:", image.uri);
-                    const uploadedExtraImageUrl = await uploadProfileImage(image);
-
-                    if (uploadedExtraImageUrl) {
-                        newExtraImages.push({
-                            uri: uploadedExtraImageUrl,
-                            type: "image/jpeg",
-                            fileName: `extra-${Date.now()}.jpg`,
-                        });
-                    } else {
-                        console.error("❌ Image upload failed for:", image.uri);
-                    }
-                } else {
-                    newExtraImages.push(image); // Keep already uploaded images
-                }
-            }
-
-            // ✅ Use newExtraImages directly in profileData (DO NOT use profile.extraImages)
-            console.log("✅ Updated Extra Images:", newExtraImages);
-
-            const db = getFirestore(getApp());
-
-            const profileData = {
-                userId: userId,
+            // 🔹 Save the profile (rows + private-bucket media) to Supabase.
+            // Re-running the save updates the existing rows in place.
+            await saveProfileToSupabase(userId, {
                 name: profile.name,
                 age: profile.age,
                 gender: profile.gender,
@@ -302,26 +276,30 @@ const CreateProfile: React.FC<{ navigation: CreateProfileScreenNavigationProp }>
                 education: profile.education,
                 height: profile.height,
                 weight: profile.weight,
-                languages: profile.languages,
                 hobbies: profile.hobbies,
                 religion: profile.religion,
                 sect: profile.sect,
                 city: profile.city,
                 about: profile.about,
-                profileImage: uploadedImageUrl ? { uri: uploadedImageUrl, type: "image/jpeg", fileName: "uploaded.jpg" } : null,
-                extraimages: newExtraImages,
                 employmentStatus: profile.employmentStatus,
                 maritalStatus: profile.maritalStatus,
-                dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth : null,
-                createdAt: new Date().toISOString(),
-            };
+                dateOfBirth: profile.dateOfBirth ? profile.dateOfBirth : undefined,
+                languageIds: (profile.languages || []).map((language) => language.id),
+                profileImage: profile.profileImage,
+                extraImages: profile.extraImages,
+            });
+            console.log("Profile saved to Supabase for user:", userId);
 
-            // Add profile data to Firestore
-            const docRef = await addDoc(collection(db, 'usersProfiles'), profileData);
-            console.log("Profile saved with ID:", docRef.id);
-
-            // Save profile in asyncstorage
-            await AsyncStorage.setItem("userProfile", JSON.stringify(profileData));
+            // Cache the freshly saved profile (with current signed image URLs)
+            // for the Profile screen.
+            try {
+                const savedProfile = await fetchOwnProfile(userId);
+                if (savedProfile) {
+                    await AsyncStorage.setItem("userProfile", JSON.stringify(savedProfile));
+                }
+            } catch (cacheError) {
+                console.error("Error caching saved profile:", cacheError);
+            }
 
             Alert.alert("Success", "Profile saved successfully!");
             navigation.navigate("Home");
@@ -536,7 +514,7 @@ const CreateProfile: React.FC<{ navigation: CreateProfileScreenNavigationProp }>
                     </Text>
                 }
 
-                <AuthenticationButton title='Select Your Date of Birth' bgColor='#ff008c' textColor='#fff' buttonWidth={"100%"} marginFromTop={"0"} onPress={showDatePicker} />
+                <AuthenticationButton title='Select Your Date of Birth' bgColor='#ff008c' textColor='#fff' buttonWidth={"100%"} marginFromTop={0} onPress={showDatePicker} />
 
                 {/* Show the Date Picker */}
                 {showPicker && (

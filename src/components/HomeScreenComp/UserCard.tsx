@@ -5,9 +5,10 @@ import { useNavigation } from '@react-navigation/native';
 import { Users } from '../../dummydata/Users';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Ionicons from 'react-native-vector-icons/Ionicons'
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
-import { addFavorites, removeFavorite } from '../../redux/favoriteSlice';
+import { useSelector } from 'react-redux';
+import { RootState, useAppDispatch } from '../../redux/store';
+import { toggleFavorite } from '../../redux/favoriteThunks';
+import { favoriteKeyOf } from '../../redux/favoriteSlice';
 import { RootStackParamList } from '../../navigation/Types';
 import { UserProfileType } from '../../navigation/TypescriptTypes/UserType';
 
@@ -20,14 +21,18 @@ interface UserCardProps {
 
 const UserCard: React.FC<UserCardProps> = ({ item }) => {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Details'>>();
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
 
     const favorites = useSelector((state: RootState) => state.favorites.favorites);
 
-    const isFavorite = useMemo(() => favorites.some(user => user.id === item.id),[favorites,item.id]);
+    const itemKey = favoriteKeyOf(item);
+    const isFavorite = useMemo(
+        () => (itemKey ? favorites.some(user => favoriteKeyOf(user) === itemKey) : false),
+        [favorites, itemKey],
+    );
 
     const handleToggleFavorites = () => {
-       dispatch(isFavorite ? removeFavorite(item?.id) : addFavorites(item))
+       dispatch(toggleFavorite(item))
     }
 
     // Early return if `item` is not provided (though it shouldn't happen if props are valid)

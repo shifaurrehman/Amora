@@ -1,23 +1,16 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, Keyboard } from 'react-native';
 import AuthenticationButton from '../../components/Button/AuthenticationButton';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { getApp } from '@react-native-firebase/app';
-import { getAuth, signInWithEmailAndPassword } from '@react-native-firebase/auth';
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from '@react-native-firebase/firestore'
 import { RootStackParamList } from '../../navigation/Types';
 import { setItem } from '../../utils/MMKV_STORAGE/mmkvStorage';
-import { storeUserToken } from '../../Api/StoreUserToken';
 import { emailRegex, passwordRegex } from '../../services/Regex/Regex';
 import { emptyEmailMessage, emptyPasswordMessage, invalidEmailMessage, invalidPasswordMessage } from '../../services/ValidationMessages/ValidationMessage';
+import { supabase } from '../../lib/supabase';
 
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>
-
-const app = getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
 
 const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState<string>('');
@@ -28,9 +21,7 @@ const LoginScreen: React.FC = () => {
 
   const navigation = useNavigation<NavigationProp>();
 
-  const usersQuery = useMemo(() => query(collection(db, "usersProfiles")), []);
-
-  const validate = (): boolean => {
+  const validate = useCallback((): boolean => {
     let isValid = true;
     if (!email) {
       setEmailError(emptyEmailMessage);
@@ -55,65 +46,52 @@ const LoginScreen: React.FC = () => {
     }
 
     return isValid;
-  };
+  }, [email, password]);
 
   
-  const handleLoginWithFirebase = useCallback(async() => {
+  const handleLogin = useCallback(async() => {
     Keyboard.dismiss();
-    setIsLoading(true);
     if (!validate()) {
-      setIsLoading(false);
       return;
     }
-      try {
-        const response = await signInWithEmailAndPassword(auth, email, password);
-        const user = response.user;
-        const uid = user.uid;
-  
-        if (!user.emailVerified) {
-          Alert.alert('Email not verified', 'Please verify your email address before logging in.');
-          setIsLoading(false);
-          return;
-        }
-  
-        setItem("USERUID", uid);
-  
-        // Fetch user profile
-        const q = query(usersQuery, where("userId", "==", uid));
-        const querySnapshot = await getDocs(q);
-  
-        if (!querySnapshot.empty) {          
-          const idToken = await user.getIdToken();
-          await storeUserToken(idToken).then(() => {
-            navigation.replace("Home");
-          });
-        } else {
-          navigation.navigate("CreateProfile", { uid });
-        }
-      } catch (error: any) {
-        let errorMessage = "An error occurred. Please try again.";
-        switch (error.code) {
-          case "auth/invalid-email":
-            errorMessage = "Invalid email format.";
-            break;
-          case "auth/user-not-found":
-            errorMessage = "No account found with this email.";
-            break;
-          case "auth/wrong-password":
-            errorMessage = "Incorrect password. Try again.";
-            break;
-          case "auth/too-many-requests":
-            errorMessage = "Too many login attempts. Try later.";
-            break;
-          default:
-            errorMessage = error.message;
-          break;
-        }
-        Alert.alert("Login Failed", errorMessage);
-      } finally {
-        setIsLoading(false);
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (error) throw error;
+
+      const user = data.user;
+      if (!user.email_confirmed_at) {
+        const { error: signOutError } = await supabase.auth.signOut();
+        if (signOutError) throw signOutError;
+        Alert.alert('Email not verified', 'Please verify your email address before logging in.');
+        return;
       }
-  }, [email, password, navigation, validate, usersQuery])
+
+      setItem('USERUID', user.id);
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (profileError) throw profileError;
+
+      if (profile) {
+        navigation.replace('Home');
+      } else {
+        navigation.navigate('CreateProfile', { uid: user.id });
+      }
+    } catch (error: unknown) {
+      Alert.alert(
+        'Login Failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [email, password, navigation, validate]);
 
 
   return (
@@ -147,7 +125,7 @@ const LoginScreen: React.FC = () => {
 
 
       {/* Login Button */}
-      <AuthenticationButton testID="login-button" onPress={handleLoginWithFirebase} bgColor={"#ff008c"} title={"Login"} textColor={"#fff"} buttonWidth={"100%"} isLoading={isLoading} />
+      <AuthenticationButton testID="login-button" onPress={handleLogin} bgColor={"#ff008c"} title={"Login"} textColor={"#fff"} buttonWidth={"100%"} isLoading={isLoading} />
     
       {/* Register Link */}
       < View style={styles.registerContainer} >

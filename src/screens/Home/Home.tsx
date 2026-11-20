@@ -1,19 +1,15 @@
 import { View, StyleSheet, FlatList, ListRenderItemInfo, Text, RefreshControl } from 'react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import UserCard from '../../components/HomeScreenComp/UserCard';
-import { getFirestore } from '@react-native-firebase/firestore';
-import { getApp } from '@react-native-firebase/app';
 import { UserProfileType } from '../../navigation/TypescriptTypes/UserType';
 import ShimmerUserCard from '../../components/HomeScreenComp/ShimmerUserCard';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from '../../redux/store';
+import { useSelector } from 'react-redux';
+import { RootState, useAppDispatch } from '../../redux/store';
 import { fetchUsersRequest } from '../../redux/FilteredUsersSlice';
-
-//**** 🔥 INITIALIZE FIRESTORE ONLY ONCE  ****\\
-const db = getFirestore(getApp());
+import { loadFavorites } from '../../redux/favoriteThunks';
 
 const Home: React.FC = () => {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const [refreshing, setRefreshing] = useState(false);
   console.log("🏠 Home component rendered");
 
@@ -24,11 +20,13 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     dispatch(fetchUsersRequest());
+    dispatch(loadFavorites());
   }, [dispatch])
 
   const onRefresh = async () => {
     setRefreshing(true);
     dispatch(fetchUsersRequest());
+    dispatch(loadFavorites());
     setTimeout(() => setRefreshing(false), 1000); // Prevent infinite loading
   };
 

@@ -2,25 +2,26 @@ import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
 import React from 'react';
 import LinearGradient from 'react-native-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import { User } from '../../dummydata/Users';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/Types';
+import { UserProfileType } from '../../navigation/TypescriptTypes/UserType';
 
 
 interface FavoriteUserCardProps {
-    user: User;
-    onRemoveFavorite: (userId: number) => void;
-}
-
-type RootStackParamList = {
-    Details: { item: User };
+    user: UserProfileType;
+    onRemoveFavorite: (user: UserProfileType) => void;
 }
 
 const FavoriteUserCard: React.FC<FavoriteUserCardProps> = ({ user, onRemoveFavorite }) => {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Details'>>();
     const handleRemoveFavorite = () => {
-        onRemoveFavorite(user.id);
+        onRemoveFavorite(user);
     };
+
+    const interests = typeof user.hobbies === 'string'
+        ? user.hobbies.split(',').map((hobby) => hobby.trim()).filter(Boolean)
+        : [];
 
     const moveToDetails = () => {
         navigation.navigate("Details", { item: user });
@@ -49,20 +50,14 @@ const FavoriteUserCard: React.FC<FavoriteUserCardProps> = ({ user, onRemoveFavor
                         </View>
 
                         {/* Optional fields */}
-                        {user.occupation && (
-                            <Text style={styles.occupation}>{user.occupation}</Text>
+                        {user.profession && (
+                            <Text style={styles.occupation}>{user.profession}</Text>
                         )}
 
-                        {user.location && (
+                        {user.city && (
                             <View style={styles.locationContainer}>
                                 <Ionicons name="location-outline" size={20} color="#ff008c" />
-                                <Text style={styles.locationText}>{user.location}</Text>
-                            </View>
-                        )}
-
-                        {user.distance && (
-                            <View style={styles.distance}>
-                                <Text style={styles.distanceText}>{user.distance}</Text>
+                                <Text style={styles.locationText}>{user.city}</Text>
                             </View>
                         )}
 
@@ -70,9 +65,9 @@ const FavoriteUserCard: React.FC<FavoriteUserCardProps> = ({ user, onRemoveFavor
                             <Text style={styles.aboutText}>{user.about}</Text>
                         )}
 
-                        {user.interests && user.interests.length > 0 && (
+                        {interests.length > 0 && (
                             <View style={styles.interestsContainer}>
-                                {user.interests.slice(0, 3).map((interest, index) => (
+                                {interests.slice(0, 3).map((interest, index) => (
                                     <View key={index} style={styles.interestBadge}>
                                         <Text style={styles.interestText}>{interest}</Text>
                                     </View>

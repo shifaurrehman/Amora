@@ -1,16 +1,13 @@
-import { View, Text, StyleSheet, FlatList, Dimensions, Image, TouchableOpacity, TextInput, Pressable } from 'react-native'
+import { View, Text, StyleSheet, FlatList, Dimensions, Image, TextInput, Pressable, TouchableOpacity } from 'react-native'
 import React, { memo, useCallback, useEffect, useState } from 'react'
-import { collection, getDocs, getFirestore, query, where } from '@react-native-firebase/firestore'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getApp } from '@react-native-firebase/app'
 import { useNavigation } from '@react-navigation/native'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { RootStackParamList } from '../../navigation/Types'
-import { getItem } from '../../utils/MMKV_STORAGE/mmkvStorage'
 import BubbleLoading from '../Animations/BubbleAnimation'
 import { UserProfileType } from '../../navigation/TypescriptTypes/UserType';
 import Ionicons from 'react-native-vector-icons/Ionicons'
-import { opacity } from 'react-native-reanimated/lib/typescript/Colors'
+import { getCurrentUserId } from '../../services/supabase/session';
+import { fetchVisibleProfiles } from '../../services/supabase/profiles';
 
 const MemoizedRenderItem = memo(({ item, userId, navigation }: { item: UserProfileType, userId: string | null, navigation: ChatScreenNavigationProp }) => (
     <TouchableOpacity
@@ -36,41 +33,36 @@ const MemoizedRenderItem = memo(({ item, userId, navigation }: { item: UserProfi
 
 type ChatScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'ActiveChatScreen'>;
 
-const db = getFirestore(getApp());
-
 const ChatScreen: React.FC = () => {
     const [users, setUsers] = useState<UserProfileType[]>([]);
     const navigation = useNavigation<ChatScreenNavigationProp>();
     const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [filteredUsers, setFilteredUsers] = useState<UserProfileType[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>('');
 
     useEffect(() => {
         const getUserData = async () => {
             try {
-                const MMKVuserId = getItem("USERUID");
-                let myUserId = MMKVuserId || null;
-
-                if (!MMKVuserId) {
-                    const myAccount = await AsyncStorage.getItem("userProfile");
-                    const parsedAccount = JSON.parse(myAccount);
-                    myUserId = parsedAccount?.userId;
+                setLoadError(null);
+                let myUserId: string | null = null;
+                try {
+                    myUserId = await getCurrentUserId();
+                } catch (sessionError: any) {
+                    console.log("Session error: ", sessionError);
                 }
                 if (!myUserId) return;
                 setUserId(myUserId);
 
-                const userQuery = query(collection(db, "usersProfiles"), where("userId", "!=", myUserId));
-                const allUsers = await getDocs(userQuery);
-                const fetchedUsers: UserProfileType[] = allUsers.docs.map((doc) => ({
-                    id: doc.id,
-                    ...(doc.data() as UserProfileType),
-                }))
+                // RLS returns discoverable profiles; exclude our own profile.
+                const fetchedUsers = await fetchVisibleProfiles({ excludeUserId: myUserId });
 
                 setUsers(fetchedUsers);
                 setFilteredUsers(fetchedUsers);
             } catch (error: any) {
                 console.log("Error: ", error);
+                setLoadError(error instanceof Error ? error.message : 'Failed to load chats.');
             } finally {
                 setLoading(false);
             }
@@ -85,7 +77,7 @@ const ChatScreen: React.FC = () => {
             setFilteredUsers(users); // Show all users if search is empty
         } else {
             const filtered = users.filter((user) =>
-                user?.name.toLowerCase().includes(query.toLowerCase())
+                user?.name?.toLowerCase().includes(query.toLowerCase())
             );
             setFilteredUsers(filtered);
         }
@@ -119,7 +111,11 @@ const ChatScreen: React.FC = () => {
 
             {loading ?
                 (<BubbleLoading />)
-                : (
+                : loadError ? (
+                    <View style={styles.errorContainer}>
+                        <Text style={styles.errorText}>{loadError}</Text>
+                    </View>
+                ) : (
                     <FlatList
                         keyExtractor={(item) => item?.id?.toString() || Math.random().toString()}
                         data={filteredUsers}
@@ -214,5 +210,16 @@ const styles = StyleSheet.create({
         backgroundColor: "#ff008c",
         borderRadius: 30,
         padding: 10,
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+    },
+    errorText: {
+        color: '#ff008c',
+        fontSize: 16,
+        textAlign: 'center',
     },
 })
